@@ -1,0 +1,11 @@
+# 保留 example_folder 文件夹的目录结构
+logs/
+tests/
+
+# 忽略 example_folder 文件夹中的所有文件
+logs/*
+
+# 忽略 example_folder 文件夹中的所有文件
+.vscode/*
+data/*
+references/*
