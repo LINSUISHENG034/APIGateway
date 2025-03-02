@@ -1,7 +1,7 @@
 import traceback
 import logging
+from flask import Flask, jsonify, request, redirect, url_for
 
-from flask import Flask, jsonify, request
 from src.models.provider import ProviderConfig
 from src.services.provider_service import ProviderService
 from src.core.port_manager import PortManager
@@ -16,8 +16,57 @@ from src.app import app  # Import the Flask app instance
 # 导入 API 蓝图
 from src.app.api.routes import api_bp
 
+# 初始化服务
+port_manager = PortManager()
+process_manager = ProcessManager()
+
+def activate_saved_providers():
+    """激活所有已保存的提供商"""
+    try:
+        # 创建新的ProviderService实例用于激活
+        provider_service = ProviderService()
+        providers = provider_service.get_all()
+        
+        for provider in providers:
+            if provider.is_active:
+                # 检查端口是否可用
+                if not port_manager.is_port_available(provider.port):
+                    app.logger.warning(f"Port {provider.port} is already in use for provider {provider.name}")
+                    continue
+                
+                # 尝试启动提供商
+                success = process_manager.start_provider(provider)
+                if success:
+                    app.logger.info(f"Successfully activated provider {provider.name} on port {provider.port}")
+                else:
+                    app.logger.error(f"Failed to activate provider {provider.name} on port {provider.port}")
+                    port_manager.release_port(provider.port)
+
+    except Exception as e:
+        app.logger.error(f"Error activating saved providers: {str(e)}")
+        app.logger.error(traceback.format_exc())
+
+# 在应用启动前激活所有已保存的提供商
+with app.app_context():
+    init_db()  # 确保数据库初始化
+    activate_saved_providers()
+
+from flask import g
+
+# 使用Flask的g对象管理ProviderService实例
+@app.before_request
+def initialize_services():
+    if 'provider_service' not in g:
+        g.provider_service = ProviderService()
+
+# 提供一个函数来获取ProviderService实例
+def get_provider_service():
+    return g.provider_service
+
+
+
 # 注册API蓝图
-app.register_blueprint(api_bp, url_prefix='/api')
+app.register_blueprint(api_bp, url_prefix='/api', name='api_v1')
 
 # 在应用初始化后添加
 # 注册GUI蓝图
@@ -55,9 +104,17 @@ def add_provider():
         if data is None or not all(key in data for key in ['name', 'api_url']):
             return jsonify({"error": "Missing required fields or invalid JSON"}), 400
 
-        authorization_header = request.headers.get('Authorization')
-        if not authorization_header:
-            return jsonify({"error": "Missing Authorization header"}), 400
+        # 从请求头或请求体中获取 API Key
+        api_key = data.get('api_key')
+        if not api_key:
+            auth_header = request.headers.get('Authorization')
+            if auth_header and ' ' in auth_header:
+                auth_type, api_key = auth_header.split(' ', 1)
+            else:
+                return jsonify({"error": "Missing API Key"}), 400
+        
+        # 可选的授权类型
+        auth_type = data.get('auth_type', 'Bearer')
 
         port = port_manager.allocate_port()
         if port is None:
@@ -66,7 +123,8 @@ def add_provider():
         config = ProviderConfig(
             name=data['name'],
             api_url=data['api_url'],
-            authorization_header=authorization_header,
+            api_key=api_key,
+            auth_type=auth_type,
             port=port
         )
         

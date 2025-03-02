@@ -10,8 +10,11 @@
     <div class="container mt-4">
         <h1>API 提供商管理</h1>
         
-        <div class="mb-3">
-            <a href="{{ url_for('add_provider') }}" class="btn btn-primary">添加提供商</a>
+        <div class="mb-3 d-flex justify-content-between">
+            <div>
+                <a href="{{ url_for('gui.add_provider') }}" class="btn btn-primary">添加提供商</a>
+                <a href="{{ url_for('gui.dashboard') }}" class="btn btn-info ml-2">查看仪表盘</a>
+            </div>
         </div>
         
         <table class="table table-striped">
@@ -62,7 +65,7 @@
                 const port = $(this).data('port');
                 if (confirm('确定要启动此提供商吗？')) {
                     $.ajax({
-                        url: `{{ url_for('index') }}providers/${port}/start`,
+                        url: `{{ url_for('gui.start_provider', port='') }}` + $(this).data('port'),
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {
@@ -85,7 +88,7 @@
                 const port = $(this).data('port');
                 if (confirm('确定要停止此提供商吗？')) {
                     $.ajax({
-                        url: `{{ url_for('index') }}providers/${port}/stop`,
+                        url: `{{ url_for('gui.stop_provider', port='') }}` + $(this).data('port'),
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {
@@ -108,7 +111,7 @@
                 const port = $(this).data('port');
                 if (confirm('确定要删除此提供商吗？此操作不可恢复！')) {
                     $.ajax({
-                        url: `{{ url_for('index') }}providers/${port}/delete`,
+                        url: `{{ url_for('gui.delete_provider', port='') }}` + $(this).data('port'),
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {

@@ -14,6 +14,33 @@ port_manager = PortManager()
 provider_service = ProviderService()
 process_manager = ProcessManager()
 
+@app.route('/dashboard')
+def dashboard():
+    """仪表盘页面"""
+    return render_template('dashboard.html')
+
+@app.route('/dashboard/data')
+def dashboard_data():
+    """获取仪表盘数据"""
+    providers = provider_service.get_all()
+    total_providers = len(providers)
+    active_providers = sum(1 for p in providers if process_manager.get_running_status(p.port) == "Running")
+    available_ports = sum(1 for port in port_manager.port_range if port_manager.is_port_available(port))
+    
+    provider_list = [{
+        'name': p.name,
+        'port': p.port,
+        'is_active': process_manager.get_running_status(p.port) == "Running"
+    } for p in providers]
+    
+    return jsonify({
+        'total_providers': total_providers,
+        'active_providers': active_providers,
+        'available_ports': available_ports,
+        'stopped_providers': total_providers - active_providers,
+        'providers': provider_list
+    })
+
 # 修改模板引用
 @app.route('/')
 def index():
@@ -34,15 +61,27 @@ def add_provider():
         try:
             name = request.form.get('name')
             api_url = request.form.get('api_url')
-            api_key = request.form.get('api_key')
+            authorization_header = request.headers.get('Authorization')
             
             # 分配端口
             port = port_manager.allocate_port()
             if not port:
                 return render_template('add_provider.html', error="无法分配端口，请稍后再试")
             
+            # 解析授权头
+            if authorization_header and ' ' in authorization_header:
+                auth_type, api_key = authorization_header.split(' ', 1)
+            else:
+                return render_template('add_provider.html', error="Invalid Authorization header")
+            
             # 创建配置
-            config = ProviderConfig(name=name, api_url=api_url, api_key=api_key, port=port)
+            config = ProviderConfig(
+                name=name,
+                api_url=api_url,
+                api_key=api_key,
+                auth_type=auth_type,
+                port=port
+            )
             result = provider_service.add_provider(config)
             
             if result["status"] == "success":

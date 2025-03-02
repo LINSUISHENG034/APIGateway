@@ -33,10 +33,10 @@ def add_provider():
         data = request.json
         name = data.get('name')
         api_url = data.get('api_url')
-        api_key = data.get('api_key')
-        
+        authorization_header = request.headers.get('Authorization')
+
         # 验证必要字段
-        if not all([name, api_url, api_key]):
+        if not all([name, api_url]):
             return jsonify({"status": "error", "message": "Missing required fields"}), 400
         
         # 分配端口
@@ -44,8 +44,20 @@ def add_provider():
         if not port:
             return jsonify({"status": "error", "message": "No available ports"}), 503
         
+        # 解析授权头
+        if authorization_header and ' ' in authorization_header:
+            auth_type, api_key = authorization_header.split(' ', 1)
+        else:
+            return jsonify({"status": "error", "message": "Invalid Authorization header"}), 400
+        
         # 创建配置
-        config = ProviderConfig(name=name, api_url=api_url, api_key=api_key, port=port)
+        config = ProviderConfig(
+            name=name,
+            api_url=api_url,
+            api_key=api_key,
+            auth_type=auth_type,
+            port=port
+        )
         result = provider_service.add_provider(config)
         
         if result["status"] == "success":

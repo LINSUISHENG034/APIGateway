@@ -10,5 +10,4 @@ design/*
 
 # 忽略 example_folder 文件夹中的所有文件
 .vscode/*
-data/*
 references/*

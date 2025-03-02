@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Gateway 仪表盘</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .card-counter {
+            box-shadow: 2px 2px 10px #DADADA;
+            margin: 5px;
+            padding: 20px 10px;
+            background-color: #fff;
+            height: 100px;
+            border-radius: 5px;
+            transition: .3s linear all;
+        }
+        .card-counter:hover {
+            box-shadow: 4px 4px 20px #DADADA;
+            transition: .3s linear all;
+        }
+        .card-counter.primary {
+            background-color: #007bff;
+            color: #FFF;
+        }
+        .card-counter.success {
+            background-color: #28a745;
+            color: #FFF;
+        }
+        .card-counter.info {
+            background-color: #17a2b8;
+            color: #FFF;
+        }
+        .card-counter.warning {
+            background-color: #ffc107;
+            color: #FFF;
+        }
+        .card-counter i {
+            font-size: 5em;
+            opacity: 0.2;
+        }
+        .card-counter .count-numbers {
+            position: absolute;
+            right: 35px;
+            top: 20px;
+            font-size: 32px;
+            display: block;
+        }
+        .card-counter .count-name {
+            position: absolute;
+            right: 35px;
+            top: 65px;
+            font-style: italic;
+            text-transform: capitalize;
+            opacity: 0.5;
+            display: block;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>API Gateway 仪表盘</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card-counter primary">
+                    <i class="fa fa-server"></i>
+                    <span class="count-numbers" id="total-providers">0</span>
+                    <span class="count-name">总提供商</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-counter success">
+                    <i class="fa fa-check-circle"></i>
+                    <span class="count-numbers" id="active-providers">0</span>
+                    <span class="count-name">运行中</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-counter info">
+                    <i class="fa fa-plug"></i>
+                    <span class="count-numbers" id="available-ports">0</span>
+                    <span class="count-name">可用端口</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-counter warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <span class="count-numbers" id="stopped-providers">0</span>
+                    <span class="count-name">已停止</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>系统状态</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>API Gateway 管理服务</h6>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">运行中</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>数据库连接</h6>
+                        <div class="progress mb-3">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">已连接</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>提供商状态</h5>
+                <a href="{{ url_for('gui.provider_list') }}" class="btn btn-primary btn-sm">管理提供商</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>端口</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="provider-table-body">
+                            <!-- 提供商数据将通过AJAX加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 加载仪表盘数据
+            function loadDashboardData() {
+                $.ajax({
+                    url: '{{ url_for("gui.dashboard_data") }}',
+                    type: 'GET',
+                    success: function(data) {
+                        $('#total-providers').text(data.total_providers);
+                        $('#active-providers').text(data.active_providers);
+                        $('#available-ports').text(data.available_ports);
+                        $('#stopped-providers').text(data.stopped_providers);
+                        
+                        // 更新提供商表格
+                        var tableBody = $('#provider-table-body');
+                        tableBody.empty();
+                        
+                        $.each(data.providers, function(i, provider) {
+                            var statusBadge = provider.is_active ? 
+                                '<span class="badge badge-success">运行中</span>' : 
+                                '<span class="badge badge-secondary">已停止</span>';
+                            
+                            var actionButton = provider.is_active ?
+                                '<button class="btn btn-sm btn-warning stop-btn" data-port="' + provider.port + '">停止</button>' :
+                                '<button class="btn btn-sm btn-success start-btn" data-port="' + provider.port + '">启动</button>';
+                            
+                            tableBody.append(
+                                '<tr>' +
+                                    '<td>' + provider.name + '</td>' +
+                                    '<td>' + provider.port + '</td>' +
+                                    '<td>' + statusBadge + '</td>' +
+                                    '<td>' + actionButton + '</td>' +
+                                '</tr>'
+                            );
+                        });
+                        
+                        // 重新绑定事件
+                        bindEvents();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error loading dashboard data:", error);
+                    }
+                });
+            }
+            
+            // 绑定事件处理函数
+            function bindEvents() {
+                // 启动提供商
+                $('.start-btn').click(function() {
+                    const port = $(this).data('port');
+                    if (confirm('确定要启动此提供商吗？')) {
+                        $.ajax({
+                            url: `{{ url_for('gui.start_provider', port='') }}` + $(this).data('port'),
+                            type: 'POST',
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    loadDashboardData(); // 重新加载数据
+                                } else {
+                                    alert('启动失败: ' + response.message);
+                                }
+                            },
+                            error: function(xhr) {
+                                alert('启动失败: ' + (xhr.responseJSON ? xhr.responseJSON.message : '未知错误'));
+                            }
+                        });
+                    }
+                });
+
+                // 停止提供商
+                $('.stop-btn').click(function() {
+                    const port = $(this).data('port');
+                    if (confirm('确定要停止此提供商吗？')) {
+                        $.ajax({
+                            url: `{{ url_for('gui.stop_provider', port='') }}` + $(this).data('port'),
+                            type: 'POST',
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    loadDashboardData(); // 重新加载数据
+                                } else {
+                                    alert('停止失败: ' + response.message);
+                                }
+                            },
+                            error: function(xhr) {
+                                alert('停止失败: ' + (xhr.responseJSON ? xhr.responseJSON.message : '未知错误'));
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // 初始加载数据
+            loadDashboardData();
+            
+            // 每30秒刷新一次数据
+            setInterval(loadDashboardData, 30000);
+        });
+    </script>
+</body>
+</html>

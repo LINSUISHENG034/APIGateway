@@ -63,9 +63,12 @@ class ProviderService:
             if not provider:
                 logger.warning(f"Provider with port {port} not found")
                 return {"status": "error", "message": "Provider not found"}
+            # 允许更新的字段列表
+            allowed_fields = ['name', 'api_url', 'api_key', 'auth_type', 'port', 'is_active']
             
             for key, value in kwargs.items():
-                if hasattr(provider, key):
+                if key in allowed_fields and hasattr(provider, key):
+                    setattr(provider, key, value)
                     setattr(provider, key, value)
             
             db.commit()

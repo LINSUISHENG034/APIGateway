@@ -28,8 +28,38 @@ Base = declarative_base()
 def init_db():
     # 导入所有模型，确保它们被注册到Base.metadata
     from src.models.provider import ProviderConfig
-    # 创建所有表
-    Base.metadata.create_all(bind=engine)
+
+    # 始终检查并更新数据库表结构
+    # 获取期望的列
+    expected_columns = [column.name for column in ProviderConfig.__table__.columns]
+
+    # 检查表是否存在以及列是否匹配
+    with engine.connect() as connection:
+        result = connection.execute("PRAGMA table_info(providers)")
+        existing_columns = [row[1] for row in result]  # 获取列名
+
+        # 如果表不存在或列不匹配，则更新表结构
+        if not existing_columns or set(expected_columns) != set(existing_columns):
+            print("Updating 'providers' table schema.")
+            ProviderConfig.__table__.drop(engine, checkfirst=True)  # 删除现有表（如果存在）
+            Base.metadata.create_all(bind=engine)  # 重新创建所有表
+        else:
+            print("Schema is up-to-date.")
+
+    # 确保有示例数据（可选）
+    # with SessionLocal() as session:
+    #     if session.query(ProviderConfig).count() == 0:
+    #         print("Adding sample provider data.")
+    #         sample_provider = ProviderConfig(
+    #             name="Sample Provider",
+    #             api_url="http://example.com/api",
+    #             api_key="sample_api_key",
+    #             auth_type="Bearer",
+    #             port=8080,
+    #             is_active=True
+    #         )
+    #         session.add(sample_provider)
+    #         session.commit()
 
 # 获取数据库会话
 def get_db():
