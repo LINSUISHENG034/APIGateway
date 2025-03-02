@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from src.models.provider import ProviderConfig
 from src.services.provider_service import ProviderService
-from src.services.port_manager import PortManager
+from src.core.port_manager import PortManager
 from src.utils.logger import get_logger
 
 logger = get_logger("src.app.api.routes")
@@ -91,4 +91,28 @@ def get_provider_status():
         return jsonify({"status": "error", "message": "Provider not found"}), 404
     
     status = process_manager.get_running_status(port)
+    return jsonify({"status": status})
+
+@api_bp.route('/providers/<int:port>/activate', methods=['POST'])
+def activate_provider(port):
+    """激活指定端口的提供商服务"""
+    try:
+        provider = provider_service.get_provider(port)
+        if not provider:
+            return jsonify({"status": "error", "message": "Provider not found"}), 404
+        
+        from src.services.process_manager import ProcessManager
+        process_manager = ProcessManager()
+        
+        # 如果服务未运行，则启动
+        if process_manager.get_running_status(port) != "Running":
+            result = process_manager.start_provider(provider)
+            if not result:
+                return jsonify({"status": "error", "message": "Failed to start provider"}), 500
+        
+        return jsonify({"status": "success", "message": "Provider activated successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"Error activating provider on port {port}: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
     return jsonify({"status": status})

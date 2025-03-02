@@ -14,6 +14,7 @@ port_manager = PortManager()
 provider_service = ProviderService()
 process_manager = ProcessManager()
 
+# 修改模板引用
 @app.route('/')
 def index():
     """主页，显示所有提供商"""

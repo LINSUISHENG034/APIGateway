@@ -28,7 +28,8 @@ class ProcessManager:
                     print(f"Error in proxy thread: {str(e)}")
                 
             thread = threading.Thread(target=run_proxy)
-            thread.daemon = True
+            thread.daemon = False  # Use non-daemon thread to keep service running
+
             thread.start()
             
             # 存储线程引用

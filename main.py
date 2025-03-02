@@ -9,26 +9,41 @@ from src.services.process_manager import ProcessManager
 from src.utils.logger import get_logger
 # 导入数据库初始化函数
 from src.config.database import init_db
+# 导入 GUI 子应用
+from src.app.gui import app as gui_blueprint, init_admin
+from src.app import app  # Import the Flask app instance
 
+# 导入 API 蓝图
+from src.app.api.routes import api_bp
 
-logger = get_logger("main")  # 日志将保存到 logs/main.log
-logger.debug("Testing early logging 1")
+# 注册API蓝图
+app.register_blueprint(api_bp, url_prefix='/api')
 
-# 初始化数据库表
-logger.info("Initializing database tables")
-init_db()
+# 在应用初始化后添加
+# 注册GUI蓝图
+app.register_blueprint(gui_blueprint, url_prefix='/gui')
 
-app = Flask(__name__)
-app.logger.setLevel(logging.DEBUG)
-app.logger = logger # Use the custom logger for the Flask app
-provider_service = ProviderService()
-port_manager = PortManager()
-process_manager = ProcessManager()
+# 初始化Admin
+init_admin(app)
 
+# 添加首页重定向
+@app.route('/gui')
+def gui_redirect():
+    return redirect('/gui/')
+@app.route('/admin')
+def admin_redirect():
+    return redirect('/admin/')
 @app.route('/', methods=['GET'])
 def home():
-    return "API Gateway is running. Use /api/providers to add a provider.", 200
-
+    return """
+    <h1>API Gateway</h1>
+    <p>API Gateway 正在运行。</p>
+    <ul>
+        <li><a href="/api/providers">API 接口</a></li>
+        <li><a href="/gui">管理界面</a></li>
+        <li><a href="/admin">Admin 界面</a></li>
+    </ul>
+    """, 200
 @app.route('/api/providers', methods=['POST'])
 def add_provider():
     app.logger.debug("Inside add_provider")
@@ -71,6 +86,26 @@ def add_provider():
         
     except Exception as e:
         app.logger.error(f"Error in add_provider: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+# 添加新的路由来获取所有提供商
+@app.route('/api/providers', methods=['GET'])
+def get_providers():
+    try:
+        providers = provider_service.get_all()
+        result = []
+        for provider in providers:
+            result.append({
+                "id": provider.id,
+                "name": provider.name,
+                "api_url": provider.api_url,
+                "port": provider.port,
+                "is_active": provider.is_active
+            })
+        return jsonify(result), 200
+    except Exception as e:
+        app.logger.error(f"Error getting providers: {str(e)}")
         app.logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 

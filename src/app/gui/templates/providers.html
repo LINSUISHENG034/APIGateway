@@ -62,7 +62,7 @@
                 const port = $(this).data('port');
                 if (confirm('确定要启动此提供商吗？')) {
                     $.ajax({
-                        url: `/providers/${port}/start`,
+                        url: `{{ url_for('index') }}providers/${port}/start`,
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {
@@ -72,19 +72,20 @@
                                 alert('启动失败: ' + response.message);
                             }
                         },
-                        error: function(xhr) {
+                        error: function(xhr, textStatus, errorThrown) {
+                            console.error("Error starting provider:", xhr, textStatus, errorThrown);
                             alert('启动失败: ' + (xhr.responseJSON ? xhr.responseJSON.message : '未知错误'));
                         }
                     });
                 }
             });
-            
+
             // 停止提供商
             $('.stop-btn').click(function() {
                 const port = $(this).data('port');
                 if (confirm('确定要停止此提供商吗？')) {
                     $.ajax({
-                        url: `/providers/${port}/stop`,
+                        url: `{{ url_for('index') }}providers/${port}/stop`,
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {
@@ -94,19 +95,20 @@
                                 alert('停止失败: ' + response.message);
                             }
                         },
-                        error: function(xhr) {
+                        error: function(xhr, textStatus, errorThrown) {
+                            console.error("Error stopping provider:", xhr, textStatus, errorThrown);
                             alert('停止失败: ' + (xhr.responseJSON ? xhr.responseJSON.message : '未知错误'));
                         }
                     });
                 }
             });
-            
+
             // 删除提供商
             $('.delete-btn').click(function() {
                 const port = $(this).data('port');
                 if (confirm('确定要删除此提供商吗？此操作不可恢复！')) {
                     $.ajax({
-                        url: `/providers/${port}/delete`,
+                        url: `{{ url_for('index') }}providers/${port}/delete`,
                         type: 'POST',
                         success: function(response) {
                             if (response.status === 'success') {
@@ -116,7 +118,8 @@
                                 alert('删除失败: ' + response.message);
                             }
                         },
-                        error: function(xhr) {
+                        error: function(xhr, textStatus, errorThrown) {
+                            console.error("Error deleting provider:", xhr, textStatus, errorThrown);
                             alert('删除失败: ' + (xhr.responseJSON ? xhr.responseJSON.message : '未知错误'));
                         }
                     });
