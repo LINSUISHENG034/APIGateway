@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加 API 提供商</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>添加 API 提供商</h1>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('add_provider') }}" method="post">
+            <div class="form-group">
+                <label for="name">名称:</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="api_url">API URL:</label>
+                <input type="url" class="form-control" id="api_url" name="api_url" required>
+            </div>
+            <div class="form-group">
+                <label for="api_key">API Key:</label>
+                <input type="text" class="form-control" id="api_key" name="api_key" required>
+            </div>
+            <button type="submit" class="btn btn-primary">添加</button>
+        </form>
+        <a href="{{ url_for('provider_list') }}" class="btn btn-secondary mt-2">返回</a>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

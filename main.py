@@ -7,10 +7,16 @@ from src.services.provider_service import ProviderService
 from src.core.port_manager import PortManager
 from src.services.process_manager import ProcessManager
 from src.utils.logger import get_logger
+# 导入数据库初始化函数
+from src.config.database import init_db
 
 
 logger = get_logger("main")  # 日志将保存到 logs/main.log
 logger.debug("Testing early logging 1")
+
+# 初始化数据库表
+logger.info("Initializing database tables")
+init_db()
 
 app = Flask(__name__)
 app.logger.setLevel(logging.DEBUG)

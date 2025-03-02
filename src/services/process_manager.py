@@ -65,3 +65,24 @@ class ProcessManager:
             self.processes.pop(port, None)
             return True
         return False
+        
+    def get_running_status(self, port):
+        """获取指定端口的提供商服务运行状态
+        
+        Args:
+            port: 提供商服务的端口号
+            
+        Returns:
+            str: "Running" 如果服务正在运行，否则返回 "Stopped"
+        """
+        # 检查线程是否存在且活跃
+        if port in self.processes and self.processes[port].is_alive():
+            # 进一步检查端口是否在监听
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                result = s.connect_ex(('localhost', port))
+                if result == 0:
+                    return "Running"
+        
+        return "Stopped"

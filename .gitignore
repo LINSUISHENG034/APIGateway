@@ -1,9 +1,12 @@
 # 保留 example_folder 文件夹的目录结构
 logs/
 tests/
+design/
 
 # 忽略 example_folder 文件夹中的所有文件
 logs/*
+tests/*
+design/*
 
 # 忽略 example_folder 文件夹中的所有文件
 .vscode/*
