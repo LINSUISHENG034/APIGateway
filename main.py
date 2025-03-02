@@ -63,8 +63,6 @@ def initialize_services():
 def get_provider_service():
     return g.provider_service
 
-
-
 # 注册API蓝图
 app.register_blueprint(api_bp, url_prefix='/api', name='api_v1')
 

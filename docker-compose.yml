@@ -3,9 +3,16 @@ version: '3.8'
 services:
   ai-proxy:
     build: .
+    container_name: api-gateway
+    restart: unless-stopped
     ports:
       - "5000:5000"
+      - "9000-9100:9000-9100"  # Port range for provider services
     volumes:
       - ./data:/app/data
+      - ./src:/app/src
+      - ./static:/app/static
+      - ./logs:/var/log
     environment:
       - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1  # Ensures Python output is sent straight to terminal
