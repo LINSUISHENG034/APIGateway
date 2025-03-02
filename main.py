@@ -29,7 +29,7 @@ init_admin(app)
 # 添加首页重定向
 @app.route('/gui')
 def gui_redirect():
-    return redirect('/gui/')
+    return redirect(url_for('gui.dashboard'))
 @app.route('/admin')
 def admin_redirect():
     return redirect('/admin/')
@@ -52,8 +52,12 @@ def add_provider():
         app.logger.debug(f"Request data: {request.data}")
         data = request.get_json(force=True, silent=True)  # Force parsing and silence errors
         app.logger.debug(f"Parsed JSON data: {data}")
-        if data is None or not all(key in data for key in ['name', 'api_url', 'api_key']):
+        if data is None or not all(key in data for key in ['name', 'api_url']):
             return jsonify({"error": "Missing required fields or invalid JSON"}), 400
+
+        authorization_header = request.headers.get('Authorization')
+        if not authorization_header:
+            return jsonify({"error": "Missing Authorization header"}), 400
 
         port = port_manager.allocate_port()
         if port is None:
@@ -62,7 +66,7 @@ def add_provider():
         config = ProviderConfig(
             name=data['name'],
             api_url=data['api_url'],
-            api_key=data['api_key'],
+            authorization_header=authorization_header,
             port=port
         )
         
